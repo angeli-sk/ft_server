@@ -1,22 +1,31 @@
-#before staring docker change disk to goinfre!!
+#Before staring docker change disk to goinfre, saves space
 #docker build -t ft_server . 					//build the image
-#docker run -d --name=ft_server_container ft_server //building the container
-#docker run -it -p 80:80 f0b60f78a423
-#docker container stop wormonastring			//stops the container, do this before prune
-#docker system prune 							//clear unused containers
+#docker run -it -p 80:80 -p 443:443 ft_server	//building the container
+#docker container stop ft_server				//stops the container, do this before prune
 #docker ps 										//shows running containers
 #docker container ls -a 						//shows list of all containers
-#docker system prune -a
+#docker system prune -a							//clear unused containers
 #docker rmi 									//remove image
 #https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
-# openssl req \											//to get the certificate crt
-#       -newkey rsa:2048 -nodes -keyout domain.key \
- #      -x509 -days 365 -subj '/C=NL/ST=NH/L=Amsterdam/O=Codam/CN=localhost' -out domain.crt
+
+#To get the certificate crt;
+#Openssl tool for creating and managing OpenSSL certificates, keys, and other files.
+#The req command primarily creates and processes certificate requests, 
+#it can additionally create self signed certificates for use as root CAs
+#
+
+# openssl req \											
+#	-newkey rsa:2048 -nodes -keyout domain.key \			
+#	-x509 -days 365 -subj '/C=NL/ST=NH/L=Amsterdam/O=Codam/CN=localhost' -out domain.crt
 
 #Install base image for debian buster, the  OS
+#	creates a layer from the debian:buster Docker image
 FROM debian:buster
-#MAINTAINER Ange
+
+#apt update kijkt of er een update is
+#apt upgrade gaat dadwerkelijk de updtae uitvoeren
 RUN apt-get update -y && \
+	apt-get upgrade -y && \
 	apt-get install -y \
 	mariadb-server \
 	mariadb-client \
@@ -38,10 +47,14 @@ RUN apt-get update -y && \
 	sendmail
 
 #Generates new certiifacate
+	#genrsa command generates an RSA private key
+	#
 RUN openssl genrsa -out /etc/ssl/certs/domain.key 2048 && \								
     openssl req -x509 -days 356 -nodes -new -key /etc/ssl/certs/domain.key \
     -subj '/C=NL/ST=NH/L=Amsterdam/O=Codam/CN=domain' -out /etc/ssl/certs/domain.crt
+
 #installs phpmyadmin
+# Database Management, allows a person to organize, store and retrieve data from a computer
 RUN wget https://files.phpmyadmin.net/phpMyAdmin/4.9.4/phpMyAdmin-4.9.4-all-languages.tar.gz && \
 	tar -zxvf phpMyAdmin-4.9.4-all-languages.tar.gz && mv phpMyAdmin-4.9.4-all-languages /var/www/html/phpmyadmin
 
@@ -83,7 +96,7 @@ RUN cd /var/www/html/wordpress && \
 	wp db create --allow-root && \
 	wp core install --url=https://localhost/wordpress --title=dₒcₖₑᵣⓌⓗⓨ --admin_user=lemao --admin_password=lemao$ --admin_email=solange@kalea.nl --allow-root
 
-#sets max uploaf file size
+#sets max upload file size
 RUN        sed -i '/upload_max_filesize/c upload_max_filesize = 20M' /etc/php/7.3/fpm/php.ini
 RUN        sed -i '/post_max_size/c post_max_size = 21M' /etc/php/7.3/fpm/php.ini
 
