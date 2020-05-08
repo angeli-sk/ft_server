@@ -1,1 +1,0 @@
-# mysql -u root -p "CREATE DATABASE wpdb; CREATE USER 'wpuser'@'localhost' identified by 'dbpassword';"

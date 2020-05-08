@@ -1,4 +1,16 @@
-#Before staring docker change disk to goinfre, saves space
+#----------------------------------------------------#
+#✧･ﾟ: *✧･ﾟ:*  *:･ﾟ✧*:･ﾟ✧✧･ *✧･ﾟ:*✧*:･ﾟ✧: *✧･ﾟ:*  *:･ﾟ#
+#													 #
+#  ██████╗  ██████╗  ██████╗██╗  ██╗███████╗██████╗  #
+#  ██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗ #
+#  ██║  ██║██║   ██║██║     █████╔╝ █████╗  ██████╔╝ #
+#  ██║  ██║██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗ #
+#  ██████╔╝╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║ #
+#  ╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ #
+#													 #
+#✧･ﾟ: *✧･ﾟ:*  *:･ﾟ✧*:･ﾟ✧✧･ *✧･ﾟ:*✧*:･ﾟ✧: *✧･ﾟ:*  *:･ #
+#----------------------------------------------------#
+
 #docker build -t ft_server . 					//build the image
 #docker run -it -p 80:80 -p 443:443 ft_server	//building the container
 #docker container stop ft_server				//stops the container, do this before prune
@@ -6,17 +18,19 @@
 #docker container ls -a 						//shows list of all containers
 #docker system prune -a							//clear unused containers
 #docker rmi 									//remove image
+
 #https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 
 #To get the certificate crt;
 #Openssl tool for creating and managing OpenSSL certificates, keys, and other files.
 #The req command primarily creates and processes certificate requests, 
 #it can additionally create self signed certificates for use as root CAs
-#
 
 # openssl req \											
 #	-newkey rsa:2048 -nodes -keyout domain.key \			
 #	-x509 -days 365 -subj '/C=NL/ST=NH/L=Amsterdam/O=Codam/CN=localhost' -out domain.crt
+
+#----------------------------------------------------#
 
 #Install base image for debian buster, the  OS
 #	creates a layer from the debian:buster Docker image
@@ -46,20 +60,17 @@ RUN apt-get update -y && \
 	openssl \
 	sendmail
 
-#Generates new certiifacate
-	#genrsa command generates an RSA private key
-	#
+#Generates new certifacate
+#	SSL (Secure Sockets Layer) is a protocol for establishing authenticated and encrypted links between networked computers.
+#	genrsa command generates an RSA private key with the rsa encryption
 RUN openssl genrsa -out /etc/ssl/certs/domain.key 2048 && \								
     openssl req -x509 -days 356 -nodes -new -key /etc/ssl/certs/domain.key \
     -subj '/C=NL/ST=NH/L=Amsterdam/O=Codam/CN=domain' -out /etc/ssl/certs/domain.crt
 
 #installs phpmyadmin
-# Database Management, allows a person to organize, store and retrieve data from a computer
+#	Database Management, allows a person to organize, store and retrieve data from a computer
 RUN wget https://files.phpmyadmin.net/phpMyAdmin/4.9.4/phpMyAdmin-4.9.4-all-languages.tar.gz && \
 	tar -zxvf phpMyAdmin-4.9.4-all-languages.tar.gz && mv phpMyAdmin-4.9.4-all-languages /var/www/html/phpmyadmin
-
-#RUN wget https://wordpress.org/wordpress-5.4.tar.gz && \
-#	tar -zxvf wordpress-5.4.tar.gz -C /var/www/html
 
 RUN mkdir /var/www/html/phpmyadmin/tmp && chmod +w /var/www/html/phpmyadmin/tmp
 COPY ./srcs/config.inc.php /var/www/html/phpmyadmin
@@ -67,22 +78,20 @@ COPY ./srcs/config.inc.php /var/www/html/phpmyadmin
 RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
 chmod +x wp-cli.phar && \
 mv wp-cli.phar /usr/local/bin/wp
-#moevs ugly tar
-#COPY	/srcs/phpMyAdmin-4.9+snapshot-all-languages.tar.gz /tmp/
+
 #moves certficate
-#COPY ./srcs/domain.crt /etc/ssl/certs/
-#COPY ./srcs/domain.key /etc/ssl/certs/
+#	COPY ./srcs/domain.crt /etc/ssl/certs/
+#	COPY ./srcs/domain.key /etc/ssl/certs/
+
 #configures nginx and runs it
 COPY ./srcs/nginx.conf /etc/nginx/sites-available/localhost
 RUN ln -s /etc/nginx/sites-available/localhost /etc/nginx/sites-enabled/localhost && nginx -t
 
 RUN service mysql start && \
-	#mysql -e "UPDATE mysql.user SET plugin = 'mysql_native_password', authentication_string = PASSWORD('securepassword') WHERE User = 'root';"  && \
 	mysql -e "CREATE USER 'angeli'@'localhost' IDENTIFIED BY '$ecurepassword'; " && \
 	mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'angeli'@'localhost';" && \
 	mysql -e "FLUSH PRIVILEGES;" && \
 	mysql < /var/www/html/phpmyadmin/sql/create_tables.sql
-	#mysql -e "CREATE DATABASE wordpress_db;"
 
 #configure wordpress
 RUN mkdir /var/www/html/wordpress
@@ -106,18 +115,8 @@ RUN chown -R www-data:www-data /var/www/html/*
 #open ports with -p flaggy
 EXPOSE 80 443 
 
+#The main purpose of a CMD is to provide defaults for an executing container. 
+#These defaults can include an executable, or they can omit the executable, in which case you must specify an ENTRYPOINT instruction as well.
 CMD		service php7.3-fpm start && service nginx start && service mysql start && bash
 
-# ENTRYPOINT ["/entrypoint.sh"]
-#COPY ./srcs/nginx.conf /tmp/
-#RUN mv /tmp/nginx.conf /etc/nginx/sites-available/default
-# COPY srcs/entrypoint.sh /
-# RUN chmod +x /entrypoint.sh
-# nginx config file for local host
-# copy nginx config file into the right place
-#  link the sites available to the sites enabled with nginx
-#  generate SSL certificates 
-
-#install php myadmin and wordpress
-
-#RUN	UPDATE mysql.user SET plugin = 'mysql_native_password', authentication_string = PASSWORD('securepassword') WHERE User = 'angeli'; FLUSH PRIVILEGES
+#----------------------------------------------------#
